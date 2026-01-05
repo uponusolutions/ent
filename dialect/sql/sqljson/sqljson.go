@@ -230,48 +230,19 @@ func ValueContains(column string, arg any, opts ...Option) *sql.Predicate {
 // string value (returned by the path) equals the given argument
 // in a case-insensitive manner.
 //
-// sqljson.ValueContainsFold("a", "Foo", sqljson.Path("b"))
-func ValueContainsFold(column string, arg any, opts ...Option) *sql.Predicate {
+// sqljson.ValueContainsFold("a", "Foo", sqljson.Path("b.[2]"))
+func ValueContainsFold(column string, arg string, opts ...Option) *sql.Predicate {
 	return sql.P(func(b *sql.Builder) {
-		path := identPath(column, opts...)
 		switch b.Dialect() {
-		case dialect.MySQL:
-			b.WriteString("LOWER")
-			b.Wrap(func(b *sql.Builder) {
-				b.WriteString("JSON_UNQUOTE")
-				b.Wrap(func(b *sql.Builder) {
-					b.WriteString("JSON_EXTRACT")
-					b.Wrap(func(b *sql.Builder) {
-						b.Ident(column).Comma()
-						path.mysqlPath(b)
-					})
-				})
-			})
-			b.WriteOp(sql.OpEQ)
-			b.WriteString("LOWER").Wrap(func(b *sql.Builder) {
-				b.Arg(arg)
-			})
-		case dialect.SQLite:
-			b.WriteString("EXISTS").Wrap(func(b *sql.Builder) {
-				b.WriteString("SELECT 1 FROM JSON_EACH").Wrap(func(b *sql.Builder) {
-					b.Ident(column).Comma()
-					path.mysqlPath(b)
-				})
-				b.WriteString(" WHERE LOWER(").
-					Ident("value").
-					WriteString(") = LOWER(").
-					Arg(arg).
-					WriteString(")")
-			})
 		case dialect.Postgres:
 			opts = normalizePG(b, arg, opts)
-			path.Cast = "jsonb"
 
+			b.WriteString("LOWER(")
 			valuePath(b, column, opts...)
+			b.WriteString(")")
 
-			b.WriteString("ILIKE ")
-			b.Arg(arg)
-
+			b.WriteOp(sql.OpLike)
+			b.Arg("%" + strings.ToLower(arg) + "%")
 		}
 	})
 }
