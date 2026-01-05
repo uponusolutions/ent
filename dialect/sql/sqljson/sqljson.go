@@ -271,8 +271,7 @@ func ValueContainsFold(column string, arg any, opts ...Option) *sql.Predicate {
 			b.Wrap(func(b *sql.Builder) {
 				valuePath(b, column, opts...)
 			})
-			b.WriteOp(sql.OpEQ)
-			b.WriteString("LOWER").Wrap(func(b *sql.Builder) {
+			b.WriteString("? LOWER").Wrap(func(b *sql.Builder) {
 				b.Arg(arg)
 			})
 		}
