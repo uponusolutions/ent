@@ -267,13 +267,11 @@ func ValueContainsFold(column string, arg any, opts ...Option) *sql.Predicate {
 			opts = normalizePG(b, arg, opts)
 			path.Cast = "jsonb"
 
-			b.WriteString("LOWER")
-			b.Wrap(func(b *sql.Builder) {
-				valuePath(b, column, opts...)
-			})
-			b.WriteString("? LOWER").Wrap(func(b *sql.Builder) {
-				b.Arg(arg)
-			})
+			valuePath(b, column, opts...)
+
+			b.WriteString("ILIKE ")
+			b.Arg(arg)
+
 		}
 	})
 }
