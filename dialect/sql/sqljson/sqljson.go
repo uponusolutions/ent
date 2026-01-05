@@ -106,11 +106,11 @@ func ValueEQ(column string, arg any, opts ...Option) *sql.Predicate {
 	})
 }
 
-// ValueEqFold returns a predicate for checking that a JSON value
+// ValueEQFold returns a predicate for checking that a JSON value
 // (returned by the path) is case-insensitively equal to the given argument.
 //
-//	sqljson.ValueEqFold("a", "aA", sqljson.Path("b"))
-func ValueEqFold(column string, arg any, opts ...Option) *sql.Predicate {
+//	sqljson.ValueEQFold("a", "aA", sqljson.Path("b"))
+func ValueEQFold(column string, arg any, opts ...Option) *sql.Predicate {
 	return sql.P(func(b *sql.Builder) {
 		opts = normalizePG(b, arg, opts)
 
