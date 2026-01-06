@@ -399,6 +399,62 @@ func TestWritePath(t *testing.T) {
 				),
 			wantQuery: "SELECT * FROM `users` ORDER BY JSON_LENGTH(`a`, '$.b')",
 		},
+		{
+			input: sql.Dialect(dialect.Postgres).
+				Select("*").
+				From(sql.Table("users")).
+				Where(sqljson.StringEQFold("a", "A", sqljson.Path("b"))),
+			wantQuery: `SELECT * FROM "users" WHERE LOWER("a"->>'b') = LOWER($1)`,
+			wantArgs:  []any{"A"},
+		},
+		{
+			input: sql.Dialect(dialect.MySQL).
+				Select("*").
+				From(sql.Table("users")).
+				Where(sqljson.StringEQFold("a", "A", sqljson.Path("b"))),
+			wantQuery: "SELECT * FROM `users` WHERE LOWER(JSON_EXTRACT(`a`, '$.b')) = LOWER(?)",
+			wantArgs:  []any{"A"},
+		},
+		{
+			input: sql.Dialect(dialect.Postgres).
+				Select("*").
+				From(sql.Table("users")).
+				Where(sqljson.StringHasPrefixFold("a", "FOO", sqljson.Path("b"))),
+			wantQuery: `SELECT * FROM "users" WHERE LOWER("a"->>'b') LIKE $1`,
+			wantArgs:  []any{"foo%"},
+		},
+		{
+			input: sql.Dialect(dialect.MySQL).
+				Select("*").
+				From(sql.Table("users")).
+				Where(sqljson.StringHasPrefixFold("a", "FOO", sqljson.Path("b"))),
+			wantQuery: "SELECT * FROM `users` WHERE LOWER(JSON_UNQUOTE(JSON_EXTRACT(`a`, '$.b'))) LIKE ?",
+			wantArgs:  []any{"foo%"},
+		},
+		{
+			input: sql.Dialect(dialect.Postgres).
+				Select("*").
+				From(sql.Table("users")).
+				Where(sqljson.StringHasSuffixFold("a", "FOO", sqljson.Path("b"))),
+			wantQuery: `SELECT * FROM "users" WHERE LOWER("a"->>'b') LIKE $1`,
+			wantArgs:  []any{"%foo"},
+		},
+		{
+			input: sql.Dialect(dialect.MySQL).
+				Select("*").
+				From(sql.Table("users")).
+				Where(sqljson.StringHasSuffixFold("a", "FOO", sqljson.Path("b"))),
+			wantQuery: "SELECT * FROM `users` WHERE LOWER(JSON_UNQUOTE(JSON_EXTRACT(`a`, '$.b'))) LIKE ?",
+			wantArgs:  []any{"%foo"},
+		},
+		{
+			input: sql.Dialect(dialect.Postgres).
+				Select("*").
+				From(sql.Table("users")).
+				Where(sqljson.StringContainsFold("a", "FOO", sqljson.Path("b"))),
+			wantQuery: `SELECT * FROM "users" WHERE LOWER("a"->>'b') LIKE $1`,
+			wantArgs:  []any{"%foo%"},
+		},
 	}
 	for i, tt := range tests {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
