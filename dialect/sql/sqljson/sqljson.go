@@ -282,6 +282,28 @@ func StringContains(column string, sub string, opts ...Option) *sql.Predicate {
 	})
 }
 
+// StringContainsFold returns a predicate for checking that a JSON
+// string value (returned by the path) contains the given substring
+// in a case-insensitive manner.
+//
+// sqljson.StringContainsFold("a", "Foo", sqljson.Path("b[2].c"))
+func StringContainsFold(column string, arg string, opts ...Option) *sql.Predicate {
+	return sql.P(func(b *sql.Builder) {
+		switch b.Dialect() {
+		case dialect.Postgres:
+			opts = normalizePG(b, arg, opts)
+
+			b.WriteString("LOWER")
+			b.Wrap(func(b *sql.Builder) {
+				valuePath(b, column, opts...)
+			})
+
+			b.WriteOp(sql.OpLike)
+			b.Arg("%" + strings.ToLower(arg) + "%")
+		}
+	})
+}
+
 // ValueIn return a predicate for checking that a JSON value
 // (returned by the path) is IN the given arguments.
 //
