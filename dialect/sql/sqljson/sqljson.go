@@ -200,6 +200,29 @@ func ValueContains(column string, arg any, opts ...Option) *sql.Predicate {
 	})
 }
 
+// StringEQFold returns a predicate for checking that a JSON string value
+// (returned by the path) is case-insensitively equal to the given argument.
+//
+//	sqljson.StringEQFold("a", "aA", sqljson.Path("b"))
+func StringEQFold(column string, arg string, opts ...Option) *sql.Predicate {
+	return sql.P(func(b *sql.Builder) {
+		opts = normalizePG(b, arg, opts)
+
+		b.WriteString("LOWER")
+		b.Wrap(func(b *sql.Builder) {
+			valuePath(b, column, opts...)
+		})
+
+		b.WriteOp(sql.OpEQ)
+
+		b.WriteString("LOWER")
+		b.Wrap(func(b *sql.Builder) {
+			b.Arg(arg)
+		})
+
+	})
+}
+
 // StringHasPrefix return a predicate for checking that a JSON string value
 // (returned by the path) has the given substring as prefix
 func StringHasPrefix(column string, prefix string, opts ...Option) *sql.Predicate {
