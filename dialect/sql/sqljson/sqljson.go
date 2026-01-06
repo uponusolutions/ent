@@ -257,6 +257,21 @@ func StringHasSuffix(column string, suffix string, opts ...Option) *sql.Predicat
 	})
 }
 
+// StringHasSuffixFold returns a predicate that checks whether a JSON string value
+// (returned by the path) has the given substring as a case-insensitive suffix
+func StringHasSuffixFold(column string, suffix string, opts ...Option) *sql.Predicate {
+	return sql.P(func(b *sql.Builder) {
+		opts = append([]Option{Unquote(true)}, opts...)
+
+		b.WriteString("LOWER")
+		b.Wrap(func(b *sql.Builder) {
+			valuePath(b, column, opts...)
+		})
+
+		b.Join(sql.HasSuffix("", strings.ToLower(suffix)))
+	})
+}
+
 // StringContains return a predicate for checking that a JSON string value
 // (returned by the path) contains the given substring
 func StringContains(column string, sub string, opts ...Option) *sql.Predicate {
