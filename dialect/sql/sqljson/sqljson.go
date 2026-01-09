@@ -206,20 +206,9 @@ func ValueContains(column string, arg any, opts ...Option) *sql.Predicate {
 //	sqljson.StringEQFold("a", "aA", sqljson.Path("b"))
 func StringEQFold(column string, arg string, opts ...Option) *sql.Predicate {
 	return sql.P(func(b *sql.Builder) {
-		opts = normalizePG(b, arg, opts)
-
-		b.WriteString("LOWER")
-		b.Wrap(func(b *sql.Builder) {
-			valuePath(b, column, opts...)
-		})
-
-		b.WriteOp(sql.OpEQ)
-
-		b.WriteString("LOWER")
-		b.Wrap(func(b *sql.Builder) {
-			b.Arg(arg)
-		})
-
+		opts = append([]Option{Unquote(true)}, opts...)
+		valuePath(b, column, opts...)
+		b.Join(sql.EqualFold("", arg))
 	})
 }
 
@@ -238,12 +227,8 @@ func StringHasPrefix(column string, prefix string, opts ...Option) *sql.Predicat
 func StringHasPrefixFold(column string, prefix string, opts ...Option) *sql.Predicate {
 	return sql.P(func(b *sql.Builder) {
 		opts = append([]Option{Unquote(true)}, opts...)
-		b.WriteString("LOWER")
-		b.Wrap(func(b *sql.Builder) {
-			valuePath(b, column, opts...)
-		})
-
-		b.Join(sql.HasPrefix("", strings.ToLower(prefix)))
+		valuePath(b, column, opts...)
+		b.Join(sql.HasPrefixFold("", prefix))
 	})
 }
 
@@ -262,13 +247,8 @@ func StringHasSuffix(column string, suffix string, opts ...Option) *sql.Predicat
 func StringHasSuffixFold(column string, suffix string, opts ...Option) *sql.Predicate {
 	return sql.P(func(b *sql.Builder) {
 		opts = append([]Option{Unquote(true)}, opts...)
-
-		b.WriteString("LOWER")
-		b.Wrap(func(b *sql.Builder) {
-			valuePath(b, column, opts...)
-		})
-
-		b.Join(sql.HasSuffix("", strings.ToLower(suffix)))
+		valuePath(b, column, opts...)
+		b.Join(sql.HasSuffixFold("", suffix))
 	})
 }
 
@@ -287,20 +267,11 @@ func StringContains(column string, sub string, opts ...Option) *sql.Predicate {
 // in a case-insensitive manner.
 //
 // sqljson.StringContainsFold("a", "Foo", sqljson.Path("b[2].c"))
-func StringContainsFold(column string, arg string, opts ...Option) *sql.Predicate {
+func StringContainsFold(column string, sub string, opts ...Option) *sql.Predicate {
 	return sql.P(func(b *sql.Builder) {
-		switch b.Dialect() {
-		case dialect.Postgres:
-			opts = normalizePG(b, arg, opts)
-
-			b.WriteString("LOWER")
-			b.Wrap(func(b *sql.Builder) {
-				valuePath(b, column, opts...)
-			})
-
-			b.WriteOp(sql.OpLike)
-			b.Arg("%" + strings.ToLower(arg) + "%")
-		}
+		opts = append([]Option{Unquote(true)}, opts...)
+		valuePath(b, column, opts...)
+		b.Join(sql.ContainsFold("", sub))
 	})
 }
 
