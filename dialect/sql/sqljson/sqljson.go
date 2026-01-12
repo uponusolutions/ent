@@ -795,7 +795,7 @@ func StringArrayContainsElementEQFold(column, arg string, opts ...Option) *sql.P
 	})
 }
 
-func StringArrayContainsElementLike(column string, arg string, opts ...Option) *sql.Predicate {
+func StringArrayContainsElementLikeFold(column string, arg string, opts ...Option) *sql.Predicate {
 	return sql.P(func(b *sql.Builder) {
 		convertHelper(b, column, opts...)
 		b.Join(sql.ContainsFold("elem", arg))
