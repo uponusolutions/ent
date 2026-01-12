@@ -770,3 +770,51 @@ func marshalArg(arg any) any {
 	}
 	return arg
 }
+
+func convertHelper(b *sql.Builder, column string, opts ...Option) {
+	path := identPath(column, opts...)
+	b.WriteString("EXISTS (SELECT 1 FROM jsonb_array_elements_text(")
+	b.WriteString("CASE ")
+	b.WriteString("WHEN jsonb_typeof(")
+	path.value(b)
+	b.WriteString(") = 'array'")
+	b.WriteString("THEN ")
+	path.value(b)
+	b.WriteString("ELSE '[]'::jsonb END ) elem WHERE ")
+}
+
+/*
+StringArrayContainsElementEQFold checks for given `column` wether value returned by path contains specific string argument case-insensetively.
+value returned by path must be string array
+*/
+func StringArrayContainsElementEQFold(column, arg string, opts ...Option) *sql.Predicate {
+	return sql.P(func(b *sql.Builder) {
+		convertHelper(b, column, opts...)
+		b.Join(sql.EqualFold("elem", arg))
+		b.WriteString(")")
+	})
+}
+
+func StringArrayContainsElementLike(column string, arg string, opts ...Option) *sql.Predicate {
+	return sql.P(func(b *sql.Builder) {
+		convertHelper(b, column, opts...)
+		b.Join(sql.ContainsFold("elem", arg))
+		b.WriteString(")")
+	})
+}
+
+func StringArrayContainsElementSuffixFold(column string, arg string, opts ...Option) *sql.Predicate {
+	return sql.P(func(b *sql.Builder) {
+		convertHelper(b, column, opts...)
+		b.Join(sql.HasSuffixFold("elem", arg))
+		b.WriteString(")")
+	})
+}
+
+func StringArrayContainsElementPrefixFold(column string, arg string, opts ...Option) *sql.Predicate {
+	return sql.P(func(b *sql.Builder) {
+		convertHelper(b, column, opts...)
+		b.Join(sql.HasPrefixFold("elem", arg))
+		b.WriteString(")")
+	})
+}
